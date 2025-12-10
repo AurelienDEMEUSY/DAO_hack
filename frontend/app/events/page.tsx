@@ -25,6 +25,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [daoActiveMembers, setDaoActiveMembers] = useState<number>(0);
 
   // Form state
   const [eventDate, setEventDate] = useState("");
@@ -42,8 +43,14 @@ export default function EventsPage() {
 
     setLoading(true);
     try {
-      const allEvents = await program.account.trackSession.all();
+      const [allEvents, state] = await Promise.all([
+        program.account.trackSession.all(),
+        fetchState(),
+      ]);
       setEvents(allEvents.map(e => e.account as any));
+      if (state) {
+        setDaoActiveMembers(state.activeMembers);
+      }
     } catch (error) {
       console.error("Error loading events:", error);
       toast.error("Failed to load events");
@@ -70,8 +77,15 @@ export default function EventsPage() {
       setEventTime("");
       setDescription("");
       await loadEvents();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating event:", error);
+
+      // Vérifier si c'est l'erreur DaoShutdown
+      if (error?.message?.includes("DaoShutdown") || error?.message?.includes("less than 3 active members")) {
+        toast.error("DAO Frozen: You need at least 3 active members to create events. Please add more genesis members first.", {
+          duration: 5000,
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -113,6 +127,16 @@ export default function EventsPage() {
 
   return (
     <div className="space-y-6">
+      {/* DAO Status Alert */}
+      {daoActiveMembers < 3 && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            ⚠️ DAO is frozen: Only {daoActiveMembers} active member{daoActiveMembers !== 1 ? "s" : ""} (minimum 3 required).
+            You cannot create or register for events until at least 3 genesis members join.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -124,7 +148,7 @@ export default function EventsPage() {
 
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={daoActiveMembers < 3}>
               <Plus className="h-4 w-4 mr-2" />
               Create Event
             </Button>
@@ -249,6 +273,7 @@ export default function EventsPage() {
                             size="sm"
                             className="flex-1"
                             onClick={() => handleRegister(event.id)}
+                            disabled={daoActiveMembers < 3}
                           >
                             <CheckCircle2 className="h-4 w-4 mr-1" />
                             Register
@@ -257,6 +282,7 @@ export default function EventsPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleWithdraw(event.id)}
+                            disabled={daoActiveMembers < 3}
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>

@@ -23,11 +23,12 @@ import { toast } from "sonner";
 export default function GovernancePage() {
   const { connected } = useWallet();
   const { program } = useAnchor();
-  const { createProposal, vote } = useDao();
+  const { createProposal, vote, fetchState } = useDao();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [daoActiveMembers, setDaoActiveMembers] = useState<number>(0);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -46,8 +47,14 @@ export default function GovernancePage() {
 
     setLoading(true);
     try {
-      const allProposals = await program.account.proposal.all();
+      const [allProposals, state] = await Promise.all([
+        program.account.proposal.all(),
+        fetchState(),
+      ]);
       setProposals(allProposals.map(p => p.account as any));
+      if (state) {
+        setDaoActiveMembers(state.activeMembers);
+      }
     } catch (error) {
       console.error("Error loading proposals:", error);
       toast.error("Failed to load proposals");
@@ -170,6 +177,7 @@ export default function GovernancePage() {
               <Button
                 className="flex-1"
                 onClick={() => handleVote(proposal.id, true)}
+                disabled={daoActiveMembers < 3}
               >
                 <ThumbsUp className="h-4 w-4 mr-2" />
                 Vote For
@@ -178,6 +186,7 @@ export default function GovernancePage() {
                 className="flex-1"
                 variant="outline"
                 onClick={() => handleVote(proposal.id, false)}
+                disabled={daoActiveMembers < 3}
               >
                 <ThumbsDown className="h-4 w-4 mr-2" />
                 Vote Against
@@ -200,6 +209,16 @@ export default function GovernancePage() {
 
   return (
     <div className="space-y-6">
+      {/* DAO Status Alert */}
+      {daoActiveMembers < 3 && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            ⚠️ DAO is frozen: Only {daoActiveMembers} active member{daoActiveMembers !== 1 ? "s" : ""} (minimum 3 required).
+            You cannot create proposals or vote until at least 3 genesis members join.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -211,7 +230,7 @@ export default function GovernancePage() {
 
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={daoActiveMembers < 3}>
               <Plus className="h-4 w-4 mr-2" />
               Create Proposal
             </Button>

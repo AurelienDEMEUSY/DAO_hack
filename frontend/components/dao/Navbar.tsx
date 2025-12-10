@@ -1,7 +1,7 @@
 "use client";
 
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletButton } from "@/components/dao/WalletButton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Home, Calendar, Vote, Users } from "lucide-react";
@@ -49,9 +49,7 @@ export function Navbar() {
             )}
           </div>
 
-          <div className="wallet-adapter-button-trigger">
-            <WalletMultiButton />
-          </div>
+          <WalletButton />
         </div>
       </div>
     </nav>
