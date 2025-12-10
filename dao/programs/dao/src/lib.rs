@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Ft54i1cMxhkD5pvxMHfmzW8quwPZRPVQRTcqMFLXqYzi");
+declare_id!("3hyf5yHncXN2rXjwezK2JxF9s9ohEGjn1GsPByKmyiUj");
 
 // ============================================================================
 // CONSTANTS

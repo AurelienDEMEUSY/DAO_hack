@@ -27,7 +27,7 @@ fn test_add_genesis_members() {
     let anchor_wallet = std::env::var("ANCHOR_WALLET").unwrap();
     let payer = read_keypair_file(&anchor_wallet).unwrap();
 
-    let client = Client::new_with_options(Cluster::Localnet, &payer, CommitmentConfig::confirmed());
+    let client = Client::new_with_options(Cluster::Devnet, &payer, CommitmentConfig::confirmed());
     let program_id = Pubkey::from_str(program_id_str).unwrap();
     let program = client.program(program_id).unwrap();
 
